@@ -1,0 +1,11 @@
+# Lieux d’intérêt du Bénin sur Wikidata : patrimoine protégé, musées, attractions, églises.
+# Exécuté par scripts/build_lieux.py — https://query.wikidata.org
+SELECT ?item ?itemLabel ?itemDescription ?coord ?image ?typeLabel ?lieuLabel ?article WHERE {
+  ?item wdt:P17 wd:Q962 ; wdt:P625 ?coord .
+  { ?item wdt:P1435 ?h } UNION { ?item wdt:P31/wdt:P279* wd:Q33506 } UNION { ?item wdt:P31/wdt:P279* wd:Q570116 } UNION { ?item wdt:P31/wdt:P279* wd:Q16970 }
+  OPTIONAL { ?item wdt:P18 ?image }
+  OPTIONAL { ?item wdt:P31 ?type }
+  OPTIONAL { ?item wdt:P131 ?lieu }
+  OPTIONAL { ?article schema:about ?item ; schema:isPartOf <https://fr.wikipedia.org/> }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". }
+}

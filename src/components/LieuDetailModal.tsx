@@ -1,18 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-interface LieuTouristique {
-  id: string;
-  nom: string;
-  description: string;
-  ville: string;
-  type: string;
-  latitude: number;
-  longitude: number;
-  photo_url?: string;
-}
 
 interface LieuDetailModalProps {
   lieu: LieuTouristique | null;
@@ -25,6 +15,7 @@ interface LieuDetailModalProps {
 // Fix default icon issue in Leaflet + React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import type { LieuTouristique } from '../lib/lieux';
 
 const icon = L.icon({
   iconUrl,
@@ -50,7 +41,7 @@ export default function LieuDetailModal({ lieu, isOpen, onClose, onToggleFavorit
   if (!isOpen || !lieu) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4" role="dialog" aria-modal="true">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
@@ -97,7 +88,15 @@ export default function LieuDetailModal({ lieu, isOpen, onClose, onToggleFavorit
                     {lieu.type}
                   </span>
                 </div>
-                <p className="text-gray-700 leading-relaxed">{lieu.description}</p>
+                <p className="text-gray-700 leading-relaxed">{lieu.description || 'Pas de description sur Wikidata.'}</p>
+                <p className="mt-3 text-sm text-gray-500 space-x-3">
+                  {lieu.wikipedia_url && (
+                    <a className="text-blue-700 underline" href={lieu.wikipedia_url} target="_blank" rel="noopener noreferrer">Article Wikipédia</a>
+                  )}
+                  {lieu.source_url && (
+                    <a className="text-blue-700 underline" href={lieu.source_url} target="_blank" rel="noopener noreferrer">Source (Wikidata)</a>
+                  )}
+                </p>
               </div>
             </div>
 
@@ -111,7 +110,7 @@ export default function LieuDetailModal({ lieu, isOpen, onClose, onToggleFavorit
                 >
                   <TileLayer
                     attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   <Marker position={[lieu.latitude, lieu.longitude]} icon={icon}>
                     <Popup>

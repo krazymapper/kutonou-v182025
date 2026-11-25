@@ -1,26 +1,14 @@
 import { useState, useEffect } from 'react'
-import viteLogo from '/vite.svg'
 import './App.css'
 import MapView from './components/MapView';
 import FiltersBar from './components/FiltersBar';
 import LieuDetailModal from './components/LieuDetailModal';
-import { supabase } from './supabaseClient';
 import { useFavorites } from './hooks/useFavorites';
-import { useOfflineData } from './hooks/useOfflineData';
-
-interface LieuTouristique {
-  id: string;
-  nom: string;
-  description: string;
-  ville: string;
-  type: string;
-  latitude: number;
-  longitude: number;
-  photo_url?: string;
-}
+import { chargerLieux, DATASET_INFO, type LieuTouristique } from './lib/lieux';
 
 function App() {
   const [lieux, setLieux] = useState<LieuTouristique[]>([]);
+  const [origine, setOrigine] = useState<'supabase' | 'integre'>('integre');
   const [selectedVille, setSelectedVille] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedLieu, setSelectedLieu] = useState<LieuTouristique | null>(null);
@@ -28,36 +16,23 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   const { toggleFavorite, isFavorite } = useFavorites();
-  const { offlineData, isOnline, saveOfflineData } = useOfflineData();
 
+  // Chargement unique au montage (l'ancienne version relançait la requête à
+  // chaque rendu : ses dépendances changeaient à chaque fois).
   useEffect(() => {
-    const fetchLieux = async () => {
-      setIsLoading(true);
-      
-      // Si on est offline et qu'on a des données en cache, les utiliser
-      if (!isOnline && offlineData.length > 0) {
-        setLieux(offlineData);
-        setIsLoading(false);
-        return;
-      }
-
-      // Si on est online, récupérer depuis Supabase
-      if (isOnline) {
-        const { data, error } = await supabase.from('lieux_touristiques').select('*');
-        if (!error && data) {
-          setLieux(data);
-          saveOfflineData(data); // Sauvegarder pour l'offline
-        }
-      }
-      
+    let actif = true;
+    chargerLieux().then((r) => {
+      if (!actif) return;
+      setLieux(r.lieux);
+      setOrigine(r.origine);
       setIsLoading(false);
-    };
-    
-    fetchLieux();
-  }, [isOnline, offlineData, saveOfflineData]);
+    });
+    return () => { actif = false; };
+  }, []);
 
-  const villes = Array.from(new Set(lieux.map(l => l.ville))).sort();
-  const types = Array.from(new Set(lieux.map(l => l.type))).sort();
+  const coll = new Intl.Collator('fr', { sensitivity: 'base' });
+  const villes = Array.from(new Set(lieux.map(l => l.ville))).sort(coll.compare);
+  const types = Array.from(new Set(lieux.map(l => l.type))).sort(coll.compare);
 
   const lieuxFiltres = lieux.filter(lieu =>
     (selectedVille === '' || lieu.ville === selectedVille) &&
@@ -85,15 +60,12 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <img src={viteLogo} className="h-8 w-8" alt="Logo" />
               <h1 className="text-2xl font-bold text-gray-900">Kutonu</h1>
             </div>
             <div className="flex items-center space-x-2">
-              {!isOnline && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                  Mode hors ligne
-                </span>
-              )}
+              <span className="text-xs text-gray-500">
+                {origine === 'supabase' ? 'Données : base Kutonu' : `Données : Wikidata (CC0), vérifiées le ${DATASET_INFO.checkedOn}`}
+              </span>
             </div>
           </div>
         </div>
@@ -131,7 +103,7 @@ function App() {
                 <div className="text-2xl font-bold text-gray-900">{lieux.length}</div>
               </div>
               <div className="bg-white p-4 rounded-lg shadow">
-                <div className="text-sm font-medium text-gray-500">Villes</div>
+                <div className="text-sm font-medium text-gray-500">Communes et départements</div>
                 <div className="text-2xl font-bold text-gray-900">{villes.length}</div>
               </div>
             </div>

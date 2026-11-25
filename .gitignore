@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Aucun export brut ni fichier de verrou bureautique dans le dépôt
+*.csv
+*.xlsx
+*.xls
+.~lock.*
+.env

@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 // Fix default icon issue in Leaflet + React
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import type { LieuTouristique } from '../lib/lieux';
 
 const icon = L.icon({
   iconUrl,
@@ -13,16 +14,6 @@ const icon = L.icon({
   iconAnchor: [12, 41],
 });
 
-interface LieuTouristique {
-  id: string;
-  nom: string;
-  description: string;
-  ville: string;
-  type: string;
-  latitude: number;
-  longitude: number;
-  photo_url?: string;
-}
 
 interface MapViewProps {
   lieux: LieuTouristique[];
@@ -40,10 +31,10 @@ export default function MapView({ lieux, onLieuClick }: MapViewProps) {
   }, []);
 
   return (
-    <MapContainer center={[6.3703, 2.3912]} zoom={8} style={{ height: '500px', width: '100%' }}>
+    <MapContainer bounds={[[6.15, 0.75], [12.45, 3.85]]} style={{ height: '500px', width: '100%' }}>
       <TileLayer
         attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {lieux.map((lieu) => (
         <Marker 
